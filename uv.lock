@@ -175,13 +175,13 @@ dev = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "bandit" },
-    { name = "mypy" },
-    { name = "pip-audit" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
+    { name = "bandit", specifier = ">=1.8" },
+    { name = "mypy", specifier = ">=1.17" },
+    { name = "pip-audit", specifier = ">=2.9" },
+    { name = "pre-commit", specifier = ">=4.2" },
+    { name = "pytest", specifier = ">=8.4" },
+    { name = "pytest-cov", specifier = ">=6.2" },
+    { name = "ruff", specifier = ">=0.12" },
 ]
 
 [[package]]
