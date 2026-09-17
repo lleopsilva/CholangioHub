@@ -5,7 +5,6 @@ using the project's SQLAlchemy engine. Designed for local/dev usage
 until a full Alembic integration is added.
 """
 import logging
-import os
 import sys
 from pathlib import Path
 

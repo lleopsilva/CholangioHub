@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/health/db")
 def health_database(
-    session: Session = Depends(database_session),
+    session: Session = Depends(database_session),  # noqa: B008
 ):
     result = session.execute(
         text("SELECT 1")
