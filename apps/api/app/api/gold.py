@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+import ast
 import os
-from typing import List, Any, cast
+from typing import Annotated, Any, cast
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.dependencies.database import database_session
-import ast
-
-from shared.models.metadata import IngestionRun, Dataset, Source, AuditLog
+from shared.models.metadata import AuditLog, Dataset, IngestionRun, Source
 
 router = APIRouter()
 
@@ -27,12 +26,12 @@ def trigger_gold_processing() -> dict[str, Any]:
         resp = requests.post(f"{processing_url}/process/gold", timeout=120)
         resp.raise_for_status()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     return cast(dict[str, Any], resp.json())
 
 
-@router.get("/runs", response_model=List[dict[str, Any]])
-def list_gold_runs(session: Session = Depends(database_session)) -> List[dict[str, Any]]:
+@router.get("/runs", response_model=list[dict[str, Any]])
+def list_gold_runs(session: Annotated[Session, Depends(database_session)]) -> list[dict[str, Any]]:
     """List recent Gold dataset runs from the metadata schema."""
     q = (
         session.query(IngestionRun, Dataset, Source)
@@ -43,7 +42,7 @@ def list_gold_runs(session: Session = Depends(database_session)) -> List[dict[st
         .limit(50)
     )
 
-    results: List[dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     for run, dataset, source in q:
         results.append(
             {
@@ -61,7 +60,7 @@ def list_gold_runs(session: Session = Depends(database_session)) -> List[dict[st
 
 
 @router.get("/latest_summary")
-def latest_gold_summary(session: Session = Depends(database_session)) -> dict[str, Any]:
+def latest_gold_summary(session: Annotated[Session, Depends(database_session)]) -> dict[str, Any]:
     """Return the most recent Gold data quality summary extracted from the audit logs."""
     entry = (
         session.query(AuditLog)
@@ -78,7 +77,7 @@ def latest_gold_summary(session: Session = Depends(database_session)) -> dict[st
         _, payload = entry.message.split("summary:", 1)
         summary = ast.literal_eval(payload.strip())
     except Exception:
-        raise HTTPException(status_code=500, detail="Failed to parse audit message")
+        raise HTTPException(status_code=500, detail="Failed to parse audit message") from None
 
     return cast(dict[str, Any], summary)
 
@@ -90,7 +89,7 @@ def gold_metrics(
     year: int | None = Query(None, description="Filter by year"),
     limit: int = Query(100, description="Max results"),
     input_path: str | None = Query(None, description="Override gold parquet path"),
-) -> List[dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Proxy to the processing service `/gold/aggregations` endpoint and return aggregations."""
     processing_url = os.getenv("PROCESSING_SERVICE_URL", "http://cholangiohub-processing:8200")
     params = {"journal": journal, "year": year, "limit": limit}
@@ -101,14 +100,17 @@ def gold_metrics(
         resp = requests.get(f"{processing_url}/gold/aggregations", params=params, timeout=120)
         resp.raise_for_status()
     except requests.RequestException as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     try:
         data = resp.json()
     except Exception as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=502, detail=f"Invalid response from processing: {exc}")
+        detail = f"Invalid response from processing: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
 
     if not isinstance(data, list):
-        raise HTTPException(status_code=502, detail="Unexpected response shape from processing service")
+        raise HTTPException(
+            status_code=502, detail="Unexpected response shape from processing"
+        )
 
-    return cast(List[dict[str, Any]], data)
+    return cast(list[dict[str, Any]], data)

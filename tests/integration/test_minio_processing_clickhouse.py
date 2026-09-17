@@ -1,13 +1,12 @@
+import json
 import os
 import time
-import json
-from textwrap import dedent
 
 import pytest
 
 try:
-    from testcontainers.postgres import PostgresContainer
     from testcontainers.core.generic import DockerContainer
+    from testcontainers.postgres import PostgresContainer
 except Exception:  # pragma: no cover - skip when testcontainers not installed
     PostgresContainer = None
     DockerContainer = None
@@ -15,10 +14,15 @@ except Exception:  # pragma: no cover - skip when testcontainers not installed
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(PostgresContainer is None or DockerContainer is None, reason="testcontainers not installed")
+@pytest.mark.skipif(
+    PostgresContainer is None or DockerContainer is None,
+    reason="testcontainers not installed",
+)
 def test_minio_processing_clickhouse_pipeline(tmp_path):
     # Start Postgres
-    with PostgresContainer("postgres:15") as pg, DockerContainer("minio/minio:latest") as minio, DockerContainer("clickhouse/clickhouse-server:latest") as ch:
+    with PostgresContainer("postgres:15") as pg, \
+        DockerContainer("minio/minio:latest") as minio, \
+        DockerContainer("clickhouse/clickhouse-server:latest") as ch:
         pg.start()
 
         # Start MinIO with required env and command
@@ -46,7 +50,10 @@ def test_minio_processing_clickhouse_pipeline(tmp_path):
         from sqlalchemy import create_engine, text
 
         engine = create_engine(db_url)
-        migrations_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "database", "migrations"))
+        base_dir = os.path.dirname(__file__)
+        migrations_dir = os.path.abspath(
+            os.path.join(base_dir, "..", "..", "database", "migrations")
+        )
         with engine.connect() as conn:
             for fname in [
                 "001_create_metadata_schema.sql",
@@ -54,7 +61,7 @@ def test_minio_processing_clickhouse_pipeline(tmp_path):
                 "003_create_audit_layer.sql",
             ]:
                 path = os.path.join(migrations_dir, fname)
-                with open(path, "r", encoding="utf-8") as fh:
+                with open(path, encoding="utf-8") as fh:
                     sql = fh.read()
                 conn.execute(text(sql))
                 conn.commit()
@@ -100,12 +107,21 @@ def test_minio_processing_clickhouse_pipeline(tmp_path):
             pass
 
         # create sample bronze json
-        sample = {"source": "pubmed", "source_id": "1", "title": "T1", "journal": "J1", "pub_year": 2020, "authors": ["A"], "ingested_at": "2026-09-17T00:00:00"}
+        sample = {
+            "source": "pubmed",
+            "source_id": "1",
+            "title": "T1",
+            "journal": "J1",
+            "pub_year": 2020,
+            "authors": ["A"],
+            "ingested_at": "2026-09-17T00:00:00",
+        }
         key = "pubmed/0000/0001/article1.json"
         s3.Object(bucket_name, key).put(Body=json.dumps(sample).encode("utf-8"))
 
         # Import processing app after env configured
         from fastapi.testclient import TestClient
+
         from services.processing.app import web as processing_web
 
         client = TestClient(processing_web.app)
@@ -121,7 +137,12 @@ def test_minio_processing_clickhouse_pipeline(tmp_path):
         # Prepare ClickHouse DB/table
         import requests
 
-        ddl = "CREATE DATABASE IF NOT EXISTS cholangiohub; CREATE TABLE IF NOT EXISTS cholangiohub.article_metrics (journal String, pub_year Int32, article_count Int32) ENGINE = MergeTree() ORDER BY (journal, pub_year)"
+        ddl = (
+            "CREATE DATABASE IF NOT EXISTS cholangiohub; "
+            "CREATE TABLE IF NOT EXISTS cholangiohub.article_metrics "
+            "(journal String, pub_year Int32, article_count Int32) "
+            "ENGINE = MergeTree() ORDER BY (journal, pub_year)"
+        )
         r = requests.post(f"{clickhouse_url}/?query={ddl}")
         r.raise_for_status()
 
@@ -130,6 +151,7 @@ def test_minio_processing_clickhouse_pipeline(tmp_path):
         assert resp.status_code == 200
 
         # Query ClickHouse count
-        r = requests.post(f"{clickhouse_url}/?query=SELECT%20count()%20FROM%20cholangiohub.article_metrics")
+        query = "SELECT%20count()%20FROM%20cholangiohub.article_metrics"
+        r = requests.post(f"{clickhouse_url}/?query={query}")
         r.raise_for_status()
         assert r.text.strip() != "0"
