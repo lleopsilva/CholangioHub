@@ -1,3 +1,12 @@
+---
+- **Timestamp**: 2026-09-17T12:00:00.000000-03:00
+- **Sprint**: Sprint 4
+- **Activity**: Silver -> Gold processing (aggregation)
+- **Status**: completed
+- **Summary**: Added Gold aggregation job, endpoint and DAG step
+- **Details**:
+    Implemented `services/processing/app/jobs/process_gold.py` which reads `silver/articles/`, computes aggregations (example: counts per `journal` and `pub_year`) and writes results to `gold/article_metrics/`. Exposed `POST /process/gold` in the processing runner and updated the `pubmed_ingest` DAG to chain `process_silver >> process_gold`. Added unit test `tests/services/processing/test_process_gold.py` and a validation script `scripts/validate_pipeline.py` to run ingest → silver → gold locally.
+---
 # Sprint Progress Log
 
 This file records concise summaries of sprint activities, appended by a small helper script after each completed activity.
