@@ -1,0 +1,13 @@
+Metadata-Version: 2.4
+Name: cholangiohub-api
+Version: 0.1.0
+Summary: CholangioHub FastAPI Application
+Requires-Python: >=3.12
+Requires-Dist: fastapi>=0.115
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: pydantic-settings>=2.5
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.2
+Requires-Dist: clickhouse-connect>=0.8
+Requires-Dist: minio>=7.2
+Requires-Dist: cholangiohub-shared

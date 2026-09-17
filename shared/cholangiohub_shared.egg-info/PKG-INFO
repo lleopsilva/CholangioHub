@@ -1,0 +1,8 @@
+Metadata-Version: 2.4
+Name: cholangiohub-shared
+Version: 0.1.0
+Summary: Shared components for CholangioHub
+Requires-Python: >=3.12
+Requires-Dist: pydantic-settings>=2.5
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg[binary]>=3.2

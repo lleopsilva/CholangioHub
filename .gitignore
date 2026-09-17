@@ -1,37 +1,23 @@
 # Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
 
-# Virtual Environment
 .venv/
+__pycache__/
+*.pyc
 
-# Test
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Ruff
-.ruff_cache/
-
-# MyPy
-.mypy_cache/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
 
 # Environment
+
 .env
 
-# Logs
-*.log
 
 # Data
-data/*
-!data/.gitkeep
+
+data/bronze/*
+data/silver/*
+data/gold/*
+
+
+# IDE
+
+.vscode/
+.idea/

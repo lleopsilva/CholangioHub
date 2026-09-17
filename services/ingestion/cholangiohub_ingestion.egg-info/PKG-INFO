@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: cholangiohub-ingestion
+Version: 0.1.0
+Summary: Ingestion Service for CholangioHub
+Requires-Python: >=3.13
+Requires-Dist: cholangiohub-shared
+Requires-Dist: minio>=7.2
+Requires-Dist: fastapi>=0.95
+Requires-Dist: requests>=2.31

@@ -1,0 +1,9 @@
+name: cholangiohub
+
+services: {}
+
+include:
+  - storage.yml
+  - processing.yml
+  - application.yml
+  - monitoring.yml

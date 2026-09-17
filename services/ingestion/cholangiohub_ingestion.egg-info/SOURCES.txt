@@ -1,0 +1,15 @@
+pyproject.toml
+app/__init__.py
+app/main.py
+app/web.py
+app/collectors/__init__.py
+app/collectors/pubmed.py
+app/parsers/__init__.py
+app/sources/__init__.py
+app/storage/__init__.py
+app/storage/minio_client.py
+cholangiohub_ingestion.egg-info/PKG-INFO
+cholangiohub_ingestion.egg-info/SOURCES.txt
+cholangiohub_ingestion.egg-info/dependency_links.txt
+cholangiohub_ingestion.egg-info/requires.txt
+cholangiohub_ingestion.egg-info/top_level.txt

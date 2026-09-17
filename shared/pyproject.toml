@@ -1,0 +1,26 @@
+[project]
+name = "cholangiohub-shared"
+version = "0.1.0"
+description = "Shared components for CholangioHub"
+requires-python = ">=3.12"
+
+dependencies = [
+    "pydantic-settings>=2.5",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2"
+]
+
+
+[tool.uv]
+package = true
+
+
+[tool.setuptools]
+packages = [
+    "config",
+    "database",
+    "logging",
+    "models",
+    "schemas",
+    "utils"
+]

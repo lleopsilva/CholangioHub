@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: cholangiohub-processing
+Version: 0.1.0
+Summary: Bronze -> Silver processing service for CholangioHub
+Requires-Python: >=3.13
+Requires-Dist: cholangiohub-shared
+Requires-Dist: pyspark>=3.5
+Requires-Dist: fastapi>=0.95
+Requires-Dist: uvicorn[standard]>=0.23

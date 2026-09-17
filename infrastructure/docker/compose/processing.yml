@@ -1,0 +1,109 @@
+services:
+
+  # Airflow webserver (LocalExecutor for simple local runs)
+  airflow-webserver:
+    build:
+      context: ../airflow
+      dockerfile: Dockerfile
+    image: cholangiohub-airflow:local
+    container_name: cholangiohub-airflow-webserver
+    restart: unless-stopped
+    env_file:
+      - ../../../.env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: ""
+      # Env var connection stays as a fast, always-available fallback (Airflow
+      # checks env vars before the metastore). The entrypoint below also
+      # registers it explicitly in the metastore so it's visible/editable in
+      # the Airflow UI under Admin > Connections, which the env var alone doesn't give you.
+      AIRFLOW_CONN_INGESTION_SERVICE: "http://cholangiohub-ingestion:8100"
+      AIRFLOW_CONN_PROCESSING_SERVICE: "http://cholangiohub-processing:8200"
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@cholangiohub-postgres:5432/${POSTGRES_DB}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../../pipelines/dags:/opt/airflow/dags
+      - ../../../pipelines:/opt/airflow/pipelines
+    depends_on:
+      - postgres
+    entrypoint:
+      - "/bin/bash"
+      - "-c"
+      - |
+        airflow db init
+        airflow connections delete ingestion_service || true
+        airflow connections add ingestion_service \
+          --conn-type http \
+          --conn-host cholangiohub-ingestion \
+          --conn-port 8100
+        airflow connections delete processing_service || true
+        airflow connections add processing_service \
+          --conn-type http \
+          --conn-host cholangiohub-processing \
+          --conn-port 8200
+        exec airflow webserver
+    networks:
+      - cholangiohub
+
+  airflow-scheduler:
+    build:
+      context: ../airflow
+      dockerfile: Dockerfile
+    image: cholangiohub-airflow:local
+    container_name: cholangiohub-airflow-scheduler
+    restart: unless-stopped
+    env_file:
+      - ../../../.env
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW_CONN_INGESTION_SERVICE: "http://cholangiohub-ingestion:8100"
+      AIRFLOW_CONN_PROCESSING_SERVICE: "http://cholangiohub-processing:8200"
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@cholangiohub-postgres:5432/${POSTGRES_DB}"
+    volumes:
+      - ../../../pipelines/dags:/opt/airflow/dags
+      - ../../../pipelines:/opt/airflow/pipelines
+    command: scheduler
+    networks:
+      - cholangiohub
+
+  spark-master:
+    image: apache/spark:3.4.1
+    container_name: cholangiohub-spark-master
+    environment:
+      - SPARK_MODE=master
+    ports:
+      - "7077:7077"
+    networks:
+      - cholangiohub
+
+  spark-worker:
+    image: apache/spark:3.4.1
+    container_name: cholangiohub-spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://cholangiohub-spark-master:7077
+    depends_on:
+      - spark-master
+    networks:
+      - cholangiohub
+
+  processing:
+    build:
+      context: ../../..
+      dockerfile: services/processing/Dockerfile
+    container_name: cholangiohub-processing
+    restart: unless-stopped
+    env_file:
+      - ../../../.env
+    ports:
+      - "8200:8200"
+    networks:
+      - cholangiohub
+
+networks:
+  cholangiohub:
+    driver: bridge
+

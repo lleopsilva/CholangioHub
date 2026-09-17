@@ -1,0 +1,20 @@
+[project]
+name = "cholangiohub-api"
+version = "0.1.0"
+description = "CholangioHub FastAPI Application"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic-settings>=2.5",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "clickhouse-connect>=0.8",
+    "minio>=7.2",
+    "cholangiohub-shared"
+]
+
+
+[tool.uv]
+package = true

@@ -1,15 +1,11 @@
 [project]
-name = "cholangiohub"
+name = "cholangiohub-workspace"
 version = "0.1.0"
 description = "Open Data & Knowledge Platform for Cholangiocarcinoma"
-readme = "README.md"
 requires-python = ">=3.13"
-license = { text = "MIT" }
-authors = [
-    { name = "Leonardo Silva" }
-]
 
 dependencies = []
+
 
 [dependency-groups]
 dev = [
@@ -19,23 +15,31 @@ dev = [
     "mypy>=1.17",
     "pre-commit>=4.2",
     "bandit>=1.8",
-    "pip-audit>=2.9"
+    "pip-audit>=2.9",
+    "testcontainers>=3.8"
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
-#
-# Como a raiz do repositório NÃO é um pacote Python,
-# impedimos o Hatch de tentar empacotá-la.
-#
-[tool.hatch.build.targets.wheel]
-packages = []
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "shared",
+    "services/ingestion",
+    "services/processing"
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+
+cholangiohub-shared = { workspace = true }
+
 
 [tool.ruff]
 line-length = 100
 target-version = "py313"
+
 
 [tool.ruff.lint]
 select = [
@@ -46,8 +50,15 @@ select = [
     "B"
 ]
 
+
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = [
+    "tests"
+]
+pythonpath = [
+    "."
+]
+
 
 [tool.mypy]
 python_version = "3.13"

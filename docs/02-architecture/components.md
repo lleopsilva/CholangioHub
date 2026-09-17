@@ -90,6 +90,18 @@ Armazena:
 - configurações;
 - metadados.
 
+Não armazena dados clínicos brutos.
+
+Dados clínicos seguem o fluxo:
+
+Fonte
+ ↓
+Bronze (MinIO)
+ ↓
+Silver (MinIO)
+ ↓
+Gold (ClickHouse)
+
 ---
 
 # 6. ClickHouse
@@ -146,3 +158,29 @@ Futuro:
 - classificação;
 - resumo;
 - busca inteligente.
+
+# 10. Shared Components
+
+A camada `shared` contém componentes reutilizáveis utilizados pelos diferentes módulos da plataforma.
+
+Estrutura:
+
+shared/
+├── config
+├── database
+├── logging
+├── models
+├── schemas
+└── utils
+
+
+Responsabilidades:
+
+| Componente | Responsabilidade |
+|---|---|
+| config | Configurações compartilhadas |
+| database | Infraestrutura de persistência compartilhada |
+| logging | Padronização de logs |
+| models | Modelos compartilhados |
+| schemas | Contratos de dados |
+| utils | Funções utilitárias comuns |
