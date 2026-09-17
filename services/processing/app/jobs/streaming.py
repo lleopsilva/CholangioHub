@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
 import os
-from pyspark.sql import SparkSession
-from pyspark.sql import DataFrame
-from pyspark.sql import Row
+
 import requests
+from pyspark.sql import DataFrame, SparkSession
 
 
 def build_streaming_spark(app_name: str = "cholangiohub-streaming") -> SparkSession:
@@ -28,7 +26,7 @@ def build_streaming_spark(app_name: str = "cholangiohub-streaming") -> SparkSess
 
 def run_streaming_job(
     input_path: str = "s3a://bronze/pubmed/",
-    output_path: Optional[str] = None,
+    output_path: str | None = None,
     checkpoint_location: str | None = None,
     app_name: str = "cholangiohub-streaming",
     await_termination: bool = True,
@@ -54,7 +52,8 @@ def run_streaming_job(
 
 
         # Basic aggregation
-        agg = df.groupBy("journal", "pub_year").count().withColumnRenamed("count", "article_count")
+        agg = df.groupBy("journal", "pub_year").count()
+        agg = agg.withColumnRenamed("count", "article_count")
 
         # helper to push batch DataFrame to ClickHouse via HTTP (TabSeparated)
         def _batch_to_clickhouse(batch_df: DataFrame, batch_id: int) -> None:
@@ -75,12 +74,19 @@ def run_streaming_job(
                 lines.append(f"{safe_journal}\t{pub_year}\t{article_count}")
 
             payload = "\n".join(lines)
-            insert_url = f"{clickhouse_url}/?query=INSERT%20INTO%20{clickhouse_db}.{clickhouse_table}%20(journal,pub_year,article_count)%20FORMAT%20TabSeparated"
+            insert_query = (
+                "INSERT%20INTO%20"
+                f"{clickhouse_db}.{clickhouse_table}%20(journal,pub_year,article_count)%20"
+                "FORMAT%20TabSeparated"
+            )
+            insert_url = f"{clickhouse_url}/?query={insert_query}"
             resp = requests.post(insert_url, data=payload.encode("utf-8"), timeout=60)
             resp.raise_for_status()
 
         # Always write to console for quick visibility
-        write_stream = agg.writeStream.outputMode("complete").format("console").option("truncate", False)
+        write_stream = (
+            agg.writeStream.outputMode("complete").format("console").option("truncate", False)
+        )
 
         if enable_clickhouse:
             # Use foreachBatch to push each micro-batch to ClickHouse
@@ -114,7 +120,6 @@ def run_streaming_job(
             # return immediately with queries running in background
             return
     finally:
-        # Do not stop spark here when running streaming in long-lived mode
-        if not await_termination:
-            return
-        spark.stop()
+        # Stop Spark only when we awaited termination to avoid silencing exceptions.
+        if await_termination:
+            spark.stop()

@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Query, Request, Response
 from fastapi.responses import PlainTextResponse
@@ -7,14 +7,16 @@ from shared.schemas import IngestionRunResult
 from shared.utils.metrics import ServiceMetrics
 
 from .jobs.process_gold import run_gold_job
-from .jobs.process_silver import run_silver_job, build_spark_session
+from .jobs.process_silver import build_spark_session, run_silver_job
 
 app = FastAPI(title="CholangioHub Processing Runner")
 metrics = ServiceMetrics("cholangiohub_processing")
 
 
 @app.middleware("http")
-async def track_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+async def track_requests(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     metrics.record_http_request()
     response = await call_next(request)
     return response
@@ -59,13 +61,23 @@ def gold_aggregations(
         if year:
             df = df.filter(df.pub_year == year)
 
-        metrics_df = df.groupBy(df.journal, df.pub_year).count().withColumnRenamed("count", "article_count")
+        metrics_df = (
+            df.groupBy(df.journal, df.pub_year)
+            .count()
+            .withColumnRenamed("count", "article_count")
+        )
         ordered = metrics_df.orderBy(metrics_df.article_count.desc()).limit(limit)
 
         rows = ordered.collect()
         result: list[dict[str, object]] = []
         for r in rows:
-            result.append({"journal": r["journal"], "pub_year": r["pub_year"], "article_count": int(r["article_count"])})
+            result.append(
+                {
+                    "journal": r["journal"],
+                    "pub_year": r["pub_year"],
+                    "article_count": int(r["article_count"]),
+                }
+            )
         return result
     finally:
         spark.stop()

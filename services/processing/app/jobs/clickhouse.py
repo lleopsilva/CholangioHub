@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Iterable
 import os
+
 import requests
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 
 def ingest_article_metrics_to_clickhouse(
@@ -26,7 +26,8 @@ def ingest_article_metrics_to_clickhouse(
     try:
         df: DataFrame = spark.read.parquet(input_path)
 
-        agg = df.groupBy(df.journal, df.pub_year).count().withColumnRenamed("count", "article_count")
+        agg = df.groupBy(df.journal, df.pub_year).count()
+        agg = agg.withColumnRenamed("count", "article_count")
 
         # Collect as CSV rows (tab-separated) for ClickHouse HTTP insert
         rows = agg.collect()
@@ -43,7 +44,12 @@ def ingest_article_metrics_to_clickhouse(
 
         payload = "\n".join(payload_lines)
 
-        insert_url = f"{clickhouse_url}/?query=INSERT%20INTO%20{clickhouse_db}.{clickhouse_table}%20(journal,pub_year,article_count)%20FORMAT%20TabSeparated"
+        insert_query = (
+            "INSERT%20INTO%20"
+            f"{clickhouse_db}.{clickhouse_table}%20(journal,pub_year,article_count)%20"
+            "FORMAT%20TabSeparated"
+        )
+        insert_url = f"{clickhouse_url}/?query={insert_query}"
 
         resp = requests.post(insert_url, data=payload.encode("utf-8"), timeout=60)
         resp.raise_for_status()

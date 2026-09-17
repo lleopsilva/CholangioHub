@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import PlainTextResponse
@@ -19,7 +19,9 @@ class IngestRequest(BaseModel):
 
 
 @app.middleware("http")
-async def track_requests(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+async def track_requests(
+    request: Request, call_next: Callable[[Request], Awaitable[Response]]
+) -> Response:
     metrics.record_http_request()
     response = await call_next(request)
     return response

@@ -1,9 +1,7 @@
 import os
 import uuid
-from textwrap import dedent
 
 import pytest
-
 from sqlalchemy import create_engine, text
 
 try:
@@ -26,9 +24,10 @@ def test_apps_api_reads_ingestion_runs_from_postgres():
 
         engine = create_engine(db_url)
         # apply SQL migrations
-        migrations_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "database", "migrations")
-        # resolve path correctly
-        migrations_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "database", "migrations"))
+        base_dir = os.path.dirname(__file__)
+        migrations_dir = os.path.abspath(
+            os.path.join(base_dir, "..", "..", "database", "migrations")
+        )
 
         # Execute migrations in order
         sql_files = [
@@ -40,7 +39,7 @@ def test_apps_api_reads_ingestion_runs_from_postgres():
         with engine.connect() as conn:
             for fname in sql_files:
                 path = os.path.join(migrations_dir, fname)
-                with open(path, "r", encoding="utf-8") as fh:
+                with open(path, encoding="utf-8") as fh:
                     sql = fh.read()
                 conn.execute(text(sql))
                 conn.commit()
@@ -52,19 +51,27 @@ def test_apps_api_reads_ingestion_runs_from_postgres():
 
             conn.execute(
                 text(
-                    "INSERT INTO metadata.sources (id, name, source_type) VALUES (:id, :name, :stype)"
+                    "INSERT INTO metadata.sources (id, name, source_type) "
+                    "VALUES (:id, :name, :stype)"
                 ),
                 {"id": source_id, "name": "pubmed", "stype": "api"},
             )
             conn.execute(
                 text(
-                    "INSERT INTO metadata.datasets (id, source_id, dataset_name, layer) VALUES (:id, :source_id, :name, :layer)"
+                    "INSERT INTO metadata.datasets (id, source_id, dataset_name, layer) "
+                    "VALUES (:id, :source_id, :name, :layer)"
                 ),
-                {"id": dataset_id, "source_id": source_id, "name": "pubmed_articles", "layer": "gold"},
+                {
+                    "id": dataset_id,
+                    "source_id": source_id,
+                    "name": "pubmed_articles",
+                    "layer": "gold",
+                },
             )
             conn.execute(
                 text(
-                    "INSERT INTO metadata.ingestion_runs (id, dataset_id, status, records_processed) VALUES (:id, :dataset_id, :status, :records)"
+                    "INSERT INTO metadata.ingestion_runs (id, dataset_id, status, "
+                    "records_processed) VALUES (:id, :dataset_id, :status, :records)"
                 ),
                 {"id": run_id, "dataset_id": dataset_id, "status": "completed", "records": 123},
             )
@@ -94,6 +101,7 @@ def test_apps_api_reads_ingestion_runs_from_postgres():
         os.environ.setdefault("CLICKHOUSE_NATIVE_PORT", "9000")
 
         from fastapi.testclient import TestClient
+
         from apps.api.app import main as api_main
 
         client = TestClient(api_main.app)
