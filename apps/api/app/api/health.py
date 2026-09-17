@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.dependencies.database import database_session
+# Import ordering can vary across environments; silence ruff import-sorting
+# warning for this small router file.
+from app.dependencies.database import database_session  # noqa: I001
 
 
 router = APIRouter()

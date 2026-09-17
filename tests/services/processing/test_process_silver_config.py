@@ -33,7 +33,10 @@ def test_build_spark_session_sets_hadoop_s3a_timeouts(monkeypatch):
             def builder():
                 return DummyBuilder()
 
-    monkeypatch.setattr("services.processing.app.jobs.process_silver.SparkSession", DummySparkSessionModule)
+    monkeypatch.setattr(
+        "services.processing.app.jobs.process_silver.SparkSession",
+        DummySparkSessionModule,
+    )
 
     build_spark_session()
 

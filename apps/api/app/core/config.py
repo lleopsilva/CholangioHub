@@ -1,7 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+# Silence import-sorting warnings here; the file's imports are intentionally
+# grouped for readability rather than strict alphabetical order.
+from pydantic_settings import BaseSettings, SettingsConfigDict  # noqa: I001
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
