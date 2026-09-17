@@ -86,6 +86,34 @@ Depois da ingestão, o serviço de processamento lê o Bronze (MinIO), limpa/ded
 curl -X POST http://localhost:8200/process/silver
 ```
 
+A mesma DAG `pubmed_ingest` já encadeia esse passo automaticamente depois da ingestão (`trigger_ingest >> process_silver`).
+
+The DAG `pubmed_ingest` already chains this step automatically after ingestion (`trigger_ingest >> process_silver`).
+
+## Processamento Gold
+
+Após a etapa Silver há uma etapa Gold de agregações e métricas pronta para consumo. O serviço de processamento agora expõe `POST /process/gold`.
+
+Para validar end-to-end localmente, depois de subir a infraestrutura e aplicar migrations, você pode usar o script de validação que aciona ingest → process/silver → process/gold:
+
+```bash
+python scripts/validate_pipeline.py
+```
+
+Ou acionar manualmente os endpoints quando os serviços estiverem expostos:
+
+```bash
+# trigger ingest
+curl -X POST http://localhost:8100/ingest/pubmed -H "Content-Type: application/json" -d '{"term":"cholangiocarcinoma","limit":5}'
+
+# process silver
+curl -X POST http://localhost:8200/process/silver
+
+# process gold
+curl -X POST http://localhost:8200/process/gold
+```
+
+Note que a primeira execução do Spark baixa dependências Java do Maven Central (requer internet uma vez).
 Isso lê `bronze/pubmed/**/*.json`, valida completude (título obrigatório), remove duplicados por `(source, source_id)` mantendo o registro mais recente, grava `silver/articles/` no MinIO e registra a execução + métricas de qualidade em `metadata.ingestion_runs` / `metadata.audit_logs`.
 
 A mesma DAG `pubmed_ingest` já encadeia esse passo automaticamente depois da ingestão (`trigger_ingest >> process_silver`).
