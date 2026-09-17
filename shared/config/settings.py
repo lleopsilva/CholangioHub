@@ -1,11 +1,9 @@
-import os
 
 from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-
     postgres_db: str = Field(default="postgres")
     postgres_user: str = Field(default="postgres")
     postgres_password: str = Field(default="postgres")
@@ -30,7 +28,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("postgres_port", "minio_port", "minio_console_port", "clickhouse_http_port", "clickhouse_native_port", mode="before")
+    @field_validator(
+        "postgres_port",
+        "minio_port",
+        "minio_console_port",
+        "clickhouse_http_port",
+        "clickhouse_native_port",
+        mode="before",
+    )
     @classmethod
     def parse_optional_int(cls, value, info: ValidationInfo):
         if value is None:

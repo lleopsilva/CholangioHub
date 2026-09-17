@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 from pyspark.sql import SparkSession
@@ -24,7 +23,9 @@ def test_run_gold_job_local(tmp_path):
 
     df.write.parquet(str(silver_dir))
 
-    result = run_gold_job(spark=spark, prefix="pubmed_test", input_path=str(silver_dir), output_path=str(gold_dir))
+    result = run_gold_job(
+        spark=spark, prefix="pubmed_test", input_path=str(silver_dir), output_path=str(gold_dir)
+    )
 
     assert result.status == "completed"
     # gold output parquet should exist

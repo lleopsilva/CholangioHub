@@ -4,6 +4,7 @@ Applies all .sql files in database/migrations in alphabetical order
 using the project's SQLAlchemy engine. Designed for local/dev usage
 until a full Alembic integration is added.
 """
+
 import logging
 import sys
 from pathlib import Path

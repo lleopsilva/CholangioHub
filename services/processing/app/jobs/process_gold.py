@@ -7,14 +7,19 @@ the run in the metadata schema analogous to the Silver job.
 """
 
 import logging
-from datetime import UTC, datetime
 
 from pyspark.sql import SparkSession
 from sqlalchemy.orm import Session
 
 from shared.database.engine import engine
 from shared.logging import get_logger, log_with_fields
-from shared.models import finish_run, get_or_create_dataset, get_or_create_source, log_audit_event, start_run
+from shared.models import (
+    finish_run,
+    get_or_create_dataset,
+    get_or_create_source,
+    log_audit_event,
+    start_run,
+)
 from shared.schemas import IngestionRunResult
 
 from .process_silver import build_spark_session
@@ -40,9 +45,7 @@ def run_gold_job(
 
         # Example aggregation: counts per journal and publication year
         metrics = (
-            df.groupBy(df.journal, df.pub_year)
-            .count()
-            .withColumnRenamed("count", "article_count")
+            df.groupBy(df.journal, df.pub_year).count().withColumnRenamed("count", "article_count")
         )
 
         records_out = metrics.count()
@@ -63,9 +66,13 @@ def run_gold_job(
                 description="PubMed articles",
                 url="https://pubmed.ncbi.nlm.nih.gov",
             )
-            dataset = get_or_create_dataset(session, source=source, dataset_name="pubmed", layer="gold")
+            dataset = get_or_create_dataset(
+                session, source=source, dataset_name="pubmed", layer="gold"
+            )
             db_run = start_run(session, dataset=dataset)
-            db_run = finish_run(session, run=db_run, status="completed", records_processed=records_out)
+            db_run = finish_run(
+                session, run=db_run, status="completed", records_processed=records_out
+            )
             log_audit_event(
                 session,
                 event_type="data_quality",

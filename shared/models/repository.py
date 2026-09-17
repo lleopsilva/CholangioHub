@@ -52,7 +52,9 @@ def start_run(session: Session, *, dataset: Dataset) -> IngestionRun:
     return run
 
 
-def finish_run(session: Session, *, run: IngestionRun, status: str, records_processed: int) -> IngestionRun:
+def finish_run(
+    session: Session, *, run: IngestionRun, status: str, records_processed: int
+) -> IngestionRun:
     run.status = status
     run.records_processed = records_processed
     run.finished_at = datetime.now(UTC)

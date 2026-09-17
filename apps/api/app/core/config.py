@@ -5,7 +5,6 @@ from pathlib import Path
 # grouped for readability rather than strict alphabetical order.
 from pydantic_settings import BaseSettings, SettingsConfigDict  # noqa: I001
 
-
 ROOT_DIR = Path(__file__).resolve().parents[2]
 
 

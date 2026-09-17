@@ -19,7 +19,6 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
-
     wait_for_ingestion_service = HttpSensor(
         task_id="wait_for_ingestion_service",
         http_conn_id="ingestion_service",

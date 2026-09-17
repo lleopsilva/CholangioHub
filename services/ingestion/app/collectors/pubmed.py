@@ -55,7 +55,9 @@ def store_raw_in_minio(data: dict, prefix: str = "pubmed") -> str:
     now = datetime.now(UTC)
     key = f"{prefix}/{now.strftime('%Y/%m/%d')}/{int(now.timestamp())}.json"
     raw = json.dumps(data).encode("utf-8")
-    client.put_object(bucket, key, data=io.BytesIO(raw), length=len(raw), part_size=10 * 1024 * 1024)
+    client.put_object(
+        bucket, key, data=io.BytesIO(raw), length=len(raw), part_size=10 * 1024 * 1024
+    )
     return key
 
 
@@ -81,7 +83,9 @@ def run(term: str = "cholangiocarcinoma", limit: int = 5) -> IngestionRunResult:
             description="PubMed articles",
             url="https://pubmed.ncbi.nlm.nih.gov",
         )
-        dataset = get_or_create_dataset(session, source=source, dataset_name="pubmed", layer="bronze")
+        dataset = get_or_create_dataset(
+            session, source=source, dataset_name="pubmed", layer="bronze"
+        )
         db_run = start_run(session, dataset=dataset)
         db_run = finish_run(session, run=db_run, status="completed", records_processed=len(ids))
         log_audit_event(

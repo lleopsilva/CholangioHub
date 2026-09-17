@@ -1,20 +1,21 @@
 """Append a concise sprint activity entry to docs/sprint_progress.md.
 
-Usage:
-  python scripts/log_sprint_activity.py --sprint "Sprint 2" --activity "PubMed collector" --status completed --summary "Added collector and endpoint" --details "Stored raw JSON in MinIO; registered run in metadata.ingestion_runs"
+Short usage example:
+    python scripts/log_sprint_activity.py --sprint "Sprint 2" --activity "PubMed collector" \
+        --status completed --summary "Added collector and endpoint"
 """
+
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 LOG_FILE = Path(__file__).resolve().parents[1] / "docs" / "sprint_progress.md"
 
 
 def append_entry(sprint: str, activity: str, status: str, summary: str, details: str | None):
-    ts = datetime.now(timezone.utc).astimezone().isoformat()
+    ts = datetime.now(UTC).astimezone().isoformat()
     entry_lines = [
         "---\n",
         f"- **Timestamp**: {ts}\n",

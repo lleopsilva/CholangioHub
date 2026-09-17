@@ -6,7 +6,17 @@ def test_build_spark_session_sets_hadoop_s3a_timeouts(monkeypatch):
 
     class DummySparkSession:
         class sparkContext:
-            _jsc = type("Jsc", (), {"hadoopConfiguration": lambda self: type("Conf", (), {"set": lambda self, key, value: captured.setdefault(key, value)})()})()
+            _jsc = type(
+                "Jsc",
+                (),
+                {
+                    "hadoopConfiguration": lambda self: type(
+                        "Conf",
+                        (),
+                        {"set": lambda self, key, value: captured.setdefault(key, value)},
+                    )()
+                },
+            )()
 
     class DummyBuilder:
         def appName(self, _):

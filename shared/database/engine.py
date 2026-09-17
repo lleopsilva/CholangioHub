@@ -2,7 +2,6 @@ from sqlalchemy import create_engine
 
 from shared.config.settings import settings
 
-
 DATABASE_URL = (
     f"postgresql+psycopg://"
     f"{settings.postgres_user}:"

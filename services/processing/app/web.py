@@ -4,8 +4,8 @@ from fastapi.responses import PlainTextResponse
 from shared.schemas import IngestionRunResult
 from shared.utils.metrics import ServiceMetrics
 
-from .jobs.process_silver import run_silver_job
 from .jobs.process_gold import run_gold_job
+from .jobs.process_silver import run_silver_job
 
 app = FastAPI(title="CholangioHub Processing Runner")
 metrics = ServiceMetrics("cholangiohub_processing")

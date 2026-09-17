@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session
 # warning for this small router file.
 from app.dependencies.database import database_session  # noqa: I001
 
-
 router = APIRouter()
 
 
@@ -14,9 +13,7 @@ router = APIRouter()
 def health_database(
     session: Session = Depends(database_session),  # noqa: B008
 ):
-    result = session.execute(
-        text("SELECT 1")
-    )
+    result = session.execute(text("SELECT 1"))
 
     return {
         "status": "healthy",

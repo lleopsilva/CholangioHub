@@ -1,5 +1,6 @@
-from shared.config.settings import settings
 from minio import Minio
+
+from shared.config.settings import settings
 
 
 def get_minio_client() -> Minio:
