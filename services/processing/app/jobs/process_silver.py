@@ -86,18 +86,22 @@ def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
     }.items():
         hadoop_conf.set(key, value)
 
-    logger.info(
-        "s3a config applied: %s",
-        {
-            key: hadoop_conf.get(key)
-            for key in [
-                "fs.s3a.endpoint",
-                "fs.s3a.connection.timeout",
-                "fs.s3a.socket.timeout",
-                "fs.s3a.path.style.access",
-            ]
-        },
-    )
+    # Log applied S3A settings; access via `get` may not be available on some
+    # PySpark/Java bridge objects, so fall back to None if unavailable.
+    keys = [
+        "fs.s3a.endpoint",
+        "fs.s3a.connection.timeout",
+        "fs.s3a.socket.timeout",
+        "fs.s3a.path.style.access",
+    ]
+    conf_values = {}
+    for key in keys:
+        try:
+            conf_values[key] = hadoop_conf.get(key)  # type: ignore[attr-defined]
+        except Exception:
+            conf_values[key] = None
+
+    logger.info("s3a config applied: %s", conf_values)
 
     return spark
 

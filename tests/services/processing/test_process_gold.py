@@ -21,7 +21,7 @@ def test_run_gold_job_local(tmp_path):
     silver_dir.mkdir()
     gold_dir.mkdir()
 
-    df.write.parquet(str(silver_dir))
+    df.write.mode("overwrite").parquet(str(silver_dir))
 
     result = run_gold_job(
         spark=spark, prefix="pubmed_test", input_path=str(silver_dir), output_path=str(gold_dir)
