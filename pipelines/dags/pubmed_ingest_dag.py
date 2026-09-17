@@ -56,4 +56,13 @@ with DAG(
         headers={"Content-Type": "application/json"},
     )
 
-    wait_for_ingestion_service >> trigger_ingest >> wait_for_processing_service >> process_silver
+    process_gold = SimpleHttpOperator(
+        task_id="process_gold",
+        http_conn_id="processing_service",
+        endpoint="/process/gold",
+        method="POST",
+        data=json.dumps({}),
+        headers={"Content-Type": "application/json"},
+    )
+
+    wait_for_ingestion_service >> trigger_ingest >> wait_for_processing_service >> process_silver >> process_gold

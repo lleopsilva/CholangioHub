@@ -5,6 +5,7 @@ from shared.schemas import IngestionRunResult
 from shared.utils.metrics import ServiceMetrics
 
 from .jobs.process_silver import run_silver_job
+from .jobs.process_gold import run_gold_job
 
 app = FastAPI(title="CholangioHub Processing Runner")
 metrics = ServiceMetrics("cholangiohub_processing")
@@ -30,3 +31,8 @@ def metrics_endpoint():
 @app.post("/process/silver", response_model=IngestionRunResult)
 def process_silver():
     return run_silver_job()
+
+
+@app.post("/process/gold", response_model=IngestionRunResult)
+def process_gold():
+    return run_gold_job()
