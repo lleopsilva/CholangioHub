@@ -8,6 +8,7 @@ single HTTP call from Airflow, the same way services/ingestion works.
 """
 
 import logging
+from typing import Any
 
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import ArrayType, IntegerType, StringType, StructField, StructType
@@ -117,7 +118,7 @@ def run_silver_job(
 
         import json
 
-        def parse_file(pair):
+        def parse_file(pair: tuple[str, str]) -> list[dict[str, Any]]:
             _, content = pair
             try:
                 payload = json.loads(content)

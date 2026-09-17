@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -12,7 +14,7 @@ router = APIRouter()
 @router.get("/health/db")
 def health_database(
     session: Session = Depends(database_session),  # noqa: B008
-):
+) -> dict[str, Any]:
     result = session.execute(text("SELECT 1"))
 
     return {

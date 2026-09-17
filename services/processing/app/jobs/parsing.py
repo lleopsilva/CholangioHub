@@ -15,7 +15,12 @@ def _parse_pub_year(pubdate: str | None) -> int | None:
 def _extract_authors(raw_authors: list[dict[str, Any]] | None) -> list[str]:
     if not raw_authors:
         return []
-    names = [a.get("name") for a in raw_authors if isinstance(a, dict) and a.get("name")]
+    names: list[str] = []
+    for a in raw_authors:
+        if isinstance(a, dict):
+            name = a.get("name")
+            if isinstance(name, str):
+                names.append(name)
     return names
 
 

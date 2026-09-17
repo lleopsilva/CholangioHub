@@ -1,3 +1,5 @@
+from typing import Iterator
+
 from sqlalchemy.orm import Session, sessionmaker
 
 from shared.database.engine import engine
@@ -10,6 +12,6 @@ SessionLocal = sessionmaker(
 )
 
 
-def get_session():
+def get_session() -> Iterator[Session]:
     with SessionLocal() as session:
         yield session

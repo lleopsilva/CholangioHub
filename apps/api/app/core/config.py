@@ -37,7 +37,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    # Pydantic BaseSettings reads from environment; mypy may incorrectly
+    # require constructor args here. Suppress the check for this dynamic init.
+    return Settings()  # type: ignore
 
 
 settings = get_settings()

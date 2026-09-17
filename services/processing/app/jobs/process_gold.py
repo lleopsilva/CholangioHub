@@ -92,7 +92,7 @@ def run_gold_job(
         return IngestionRunResult(
             run_id=run_id,
             status="completed",
-            records_in=quality_summary.get("records_in_silver"),
+            records_in=int(quality_summary["records_in_silver"]),
             records_out=records_out,
             details=str(quality_summary),
         )
