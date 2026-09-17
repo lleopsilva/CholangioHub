@@ -97,7 +97,7 @@ def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
     conf_values = {}
     for key in keys:
         try:
-            conf_values[key] = hadoop_conf.get(key)  # type: ignore[attr-defined]
+            conf_values[key] = hadoop_conf.get(key)
         except Exception:
             conf_values[key] = None
 
