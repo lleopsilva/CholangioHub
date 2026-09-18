@@ -53,8 +53,8 @@ def test_run_gold_job_local(tmp_path, monkeypatch):
             return False
 
     monkeypatch.setattr(process_gold, "Session", lambda bind=None: FakeSession())
-    monkeypatch.setattr(process_gold, "get_or_create_source", lambda session, **kwargs: FakeSource())
-    monkeypatch.setattr(process_gold, "get_or_create_dataset", lambda session, **kwargs: FakeDataset())
+    monkeypatch.setattr(process_gold, "get_or_create_source", lambda session,**kwargs:FakeSource())
+    monkeypatch.setattr(process_gold, "get_or_create_dataset",lambda session,**kwargs:FakeDataset())
     monkeypatch.setattr(process_gold, "start_run", lambda session, **kwargs: FakeRun())
     monkeypatch.setattr(process_gold, "finish_run", lambda session, **kwargs: FakeRun())
     monkeypatch.setattr(process_gold, "log_audit_event", lambda session, **kwargs: None)
