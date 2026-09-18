@@ -22,7 +22,7 @@ from shared.models import (
 )
 from shared.schemas import IngestionRunResult
 
-from .process_silver import build_spark_session
+from .process_silver import build_spark_session, ensure_minio_bucket
 
 logger = get_logger(__name__)
 
@@ -51,6 +51,7 @@ def run_gold_job(
         records_out = metrics.count()
 
         # write partitioned by year for easy consumption
+        ensure_minio_bucket("gold")
         metrics.write.mode("overwrite").parquet(output_path)
 
         quality_summary = {

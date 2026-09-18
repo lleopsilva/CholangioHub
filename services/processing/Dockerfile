@@ -25,6 +25,6 @@ EXPOSE 8200
 # Note: on first run, Spark downloads hadoop-aws/aws-java-sdk-bundle from Maven
 # (spark.jars.packages in build_spark_session) - requires outbound internet
 # the first time; jars are cached under ~/.ivy2 after that.
-RUN pip install pyspark "uvicorn[standard]" fastapi
+RUN pip install pyspark "uvicorn[standard]" fastapi minio requests
 
 CMD ["uvicorn", "app.web:app", "--host", "0.0.0.0", "--port", "8200"]

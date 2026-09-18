@@ -10,6 +10,7 @@ single HTTP call from Airflow, the same way services/ingestion works.
 import logging
 from typing import Any
 
+from minio import Minio
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import ArrayType, IntegerType, StringType, StructField, StructType
 from sqlalchemy.orm import Session
@@ -40,6 +41,19 @@ ARTICLE_SCHEMA = StructType(
         StructField("ingested_at", StringType(), nullable=False),
     ]
 )
+
+
+def ensure_minio_bucket(bucket: str) -> None:
+    from shared.config.settings import settings
+
+    client = Minio(
+        f"{getattr(settings, 'minio_host', 'minio')}:9000",
+        access_key=settings.minio_root_user,
+        secret_key=settings.minio_root_password,
+        secure=False,
+    )
+    if not client.bucket_exists(bucket):
+        client.make_bucket(bucket)
 
 
 def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
@@ -151,6 +165,7 @@ def run_silver_job(
         records_out = deduped.count()
         duplicates_removed = records_parsed - records_out
 
+        ensure_minio_bucket("silver")
         deduped.write.mode("overwrite").parquet("s3a://silver/articles/")
 
         quality_summary = {

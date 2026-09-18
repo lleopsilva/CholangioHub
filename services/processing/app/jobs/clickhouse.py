@@ -3,14 +3,17 @@ from __future__ import annotations
 import os
 
 import requests
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 
+from .process_silver import build_spark_session
 
 def ingest_article_metrics_to_clickhouse(
     input_path: str = "s3a://gold/article_metrics/",
     clickhouse_url: str | None = None,
     clickhouse_db: str | None = None,
     clickhouse_table: str = "article_metrics",
+    clickhouse_user: str | None = None,
+    clickhouse_password: str | None = None,
 ) -> int:
     """Read gold article metrics Parquet, aggregate, and insert into ClickHouse via HTTP.
 
@@ -18,18 +21,19 @@ def ingest_article_metrics_to_clickhouse(
     """
     clickhouse_url = clickhouse_url or os.getenv("CLICKHOUSE_HTTP_URL")
     clickhouse_db = clickhouse_db or os.getenv("CLICKHOUSE_DB")
+    clickhouse_user = clickhouse_user or os.getenv("CLICKHOUSE_USER")
+    clickhouse_password = clickhouse_password or os.getenv("CLICKHOUSE_PASSWORD")
 
     if not clickhouse_url or not clickhouse_db:
         raise RuntimeError("CLICKHOUSE_HTTP_URL and CLICKHOUSE_DB must be set to ingest metrics")
 
-    spark = SparkSession.builder.appName("cholangiohub-clickhouse-ingest").getOrCreate()
+    spark = build_spark_session(app_name="cholangiohub-clickhouse-ingest")
     try:
         df: DataFrame = spark.read.parquet(input_path)
 
         agg = df.groupBy(df.journal, df.pub_year).count()
         agg = agg.withColumnRenamed("count", "article_count")
 
-        # Collect as CSV rows (tab-separated) for ClickHouse HTTP insert
         rows = agg.collect()
 
         if not rows:
@@ -51,7 +55,8 @@ def ingest_article_metrics_to_clickhouse(
         )
         insert_url = f"{clickhouse_url}/?query={insert_query}"
 
-        resp = requests.post(insert_url, data=payload.encode("utf-8"), timeout=60)
+        auth = (clickhouse_user, clickhouse_password) if clickhouse_user else None
+        resp = requests.post(insert_url, data=payload.encode("utf-8"), auth=auth, timeout=60)
         resp.raise_for_status()
 
         return len(rows)
