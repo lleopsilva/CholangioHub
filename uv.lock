@@ -364,7 +364,9 @@ source = { editable = "services/processing" }
 dependencies = [
     { name = "cholangiohub-shared" },
     { name = "fastapi" },
+    { name = "minio" },
     { name = "pyspark" },
+    { name = "requests" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -372,7 +374,9 @@ dependencies = [
 requires-dist = [
     { name = "cholangiohub-shared", editable = "shared" },
     { name = "fastapi", specifier = ">=0.95" },
+    { name = "minio", specifier = ">=7.2" },
     { name = "pyspark", specifier = ">=3.5" },
+    { name = "requests", specifier = ">=2.31" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.23" },
 ]
 

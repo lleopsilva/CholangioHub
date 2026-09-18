@@ -1,5 +1,3 @@
-import os
-
 from shared.config.settings import Settings
 
 

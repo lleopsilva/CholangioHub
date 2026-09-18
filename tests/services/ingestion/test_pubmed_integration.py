@@ -6,9 +6,8 @@ os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "1")
 
 from minio import Minio
 from sqlalchemy import create_engine, text
-
-from testcontainers.postgres import PostgresContainer
 from testcontainers.core.container import DockerContainer
+from testcontainers.postgres import PostgresContainer
 
 from services.ingestion.app.collectors import pubmed
 
@@ -70,7 +69,9 @@ def test_pubmed_integration(monkeypatch):
 
             # Assert: run + source + dataset rows exist via the real schema
             with engine.connect() as conn:
-                count = conn.execute(text("SELECT COUNT(*) FROM metadata.ingestion_runs")).scalar_one()
+                count = conn.execute(
+                    text("SELECT COUNT(*) FROM metadata.ingestion_runs")
+                ).scalar_one()
                 assert count >= 1
 
                 source_name = conn.execute(

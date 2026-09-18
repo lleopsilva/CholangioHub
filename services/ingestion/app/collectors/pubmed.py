@@ -2,6 +2,7 @@ import io
 import json
 import logging
 from datetime import UTC, datetime
+from typing import Any, cast
 
 import requests
 from sqlalchemy.orm import Session
@@ -34,28 +35,30 @@ def search_pubmed(term: str, retmax: int = 5) -> list[str]:
     }
     resp = requests.get(ESEARCH_URL, params=params, timeout=30)
     resp.raise_for_status()
-    data = resp.json()
-    ids = data.get("esearchresult", {}).get("idlist", [])
-    return ids
+    data: dict[str, Any] = resp.json()
+    ids_any = data.get("esearchresult", {}).get("idlist", [])
+    return [str(i) for i in ids_any]
 
 
-def fetch_summaries(ids: list[str]) -> dict:
+def fetch_summaries(ids: list[str]) -> dict[str, Any]:
     if not ids:
-        return {}
+        return cast(dict[str, Any], {})
     params = {"db": "pubmed", "id": ",".join(ids), "retmode": "json"}
     resp = requests.get(ESUMMARY_URL, params=params, timeout=30)
     resp.raise_for_status()
-    return resp.json()
+    return cast(dict[str, Any], resp.json())
 
 
-def store_raw_in_minio(data: dict, prefix: str = "pubmed") -> str:
+def store_raw_in_minio(data: dict[str, Any], prefix: str = "pubmed") -> str:
     client = get_minio_client()
     bucket = "bronze"
     ensure_bucket(client, bucket)
     now = datetime.now(UTC)
     key = f"{prefix}/{now.strftime('%Y/%m/%d')}/{int(now.timestamp())}.json"
     raw = json.dumps(data).encode("utf-8")
-    client.put_object(bucket, key, data=io.BytesIO(raw), length=len(raw), part_size=10 * 1024 * 1024)
+    client.put_object(
+        bucket, key, data=io.BytesIO(raw), length=len(raw), part_size=10 * 1024 * 1024
+    )
     return key
 
 
@@ -81,7 +84,9 @@ def run(term: str = "cholangiocarcinoma", limit: int = 5) -> IngestionRunResult:
             description="PubMed articles",
             url="https://pubmed.ncbi.nlm.nih.gov",
         )
-        dataset = get_or_create_dataset(session, source=source, dataset_name="pubmed", layer="bronze")
+        dataset = get_or_create_dataset(
+            session, source=source, dataset_name="pubmed", layer="bronze"
+        )
         db_run = start_run(session, dataset=dataset)
         db_run = finish_run(session, run=db_run, status="completed", records_processed=len(ids))
         log_audit_event(

@@ -8,15 +8,22 @@ single HTTP call from Airflow, the same way services/ingestion works.
 """
 
 import logging
-from datetime import UTC, datetime
+from typing import Any
 
+from minio import Minio
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import ArrayType, IntegerType, StringType, StructField, StructType
 from sqlalchemy.orm import Session
 
 from shared.database.engine import engine
 from shared.logging import get_logger, log_with_fields
-from shared.models import finish_run, get_or_create_dataset, get_or_create_source, log_audit_event, start_run
+from shared.models import (
+    finish_run,
+    get_or_create_dataset,
+    get_or_create_source,
+    log_audit_event,
+    start_run,
+)
 from shared.schemas import IngestionRunResult
 
 from .parsing import parse_bronze_pubmed_payload
@@ -34,6 +41,19 @@ ARTICLE_SCHEMA = StructType(
         StructField("ingested_at", StringType(), nullable=False),
     ]
 )
+
+
+def ensure_minio_bucket(bucket: str) -> None:
+    from shared.config.settings import settings
+
+    client = Minio(
+        f"{getattr(settings, 'minio_host', 'minio')}:9000",
+        access_key=settings.minio_root_user,
+        secret_key=settings.minio_root_password,
+        secure=False,
+    )
+    if not client.bucket_exists(bucket):
+        client.make_bucket(bucket)
 
 
 def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
@@ -54,7 +74,7 @@ def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
         .master("local[*]")
         .config(
             "spark.jars.packages",
-            "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
+            "org.apache.hadoop:hadoop-aws:3.5.0,com.amazonaws:aws-java-sdk-bundle:1.12.720",
         )
         .config("spark.hadoop.fs.s3a.endpoint", minio_endpoint)
         .config("spark.hadoop.fs.s3a.access.key", settings.minio_root_user)
@@ -80,12 +100,29 @@ def build_spark_session(app_name: str = "cholangiohub-silver") -> SparkSession:
     }.items():
         hadoop_conf.set(key, value)
 
-    logger.info("s3a config applied: %s", {key: hadoop_conf.get(key) for key in ["fs.s3a.endpoint", "fs.s3a.connection.timeout", "fs.s3a.socket.timeout", "fs.s3a.path.style.access"]})
+    # Log applied S3A settings; access via `get` may not be available on some
+    # PySpark/Java bridge objects, so fall back to None if unavailable.
+    keys = [
+        "fs.s3a.endpoint",
+        "fs.s3a.connection.timeout",
+        "fs.s3a.socket.timeout",
+        "fs.s3a.path.style.access",
+    ]
+    conf_values = {}
+    for key in keys:
+        try:
+            conf_values[key] = hadoop_conf.get(key)
+        except Exception:
+            conf_values[key] = None
+
+    logger.info("s3a config applied: %s", conf_values)
 
     return spark
 
 
-def run_silver_job(spark: SparkSession | None = None, *, prefix: str = "pubmed") -> IngestionRunResult:
+def run_silver_job(
+    spark: SparkSession | None = None, *, prefix: str = "pubmed"
+) -> IngestionRunResult:
     owns_session = spark is None
     spark = spark or build_spark_session()
 
@@ -99,7 +136,7 @@ def run_silver_job(spark: SparkSession | None = None, *, prefix: str = "pubmed")
 
         import json
 
-        def parse_file(pair):
+        def parse_file(pair: tuple[str, str]) -> list[dict[str, Any]]:
             _, content = pair
             try:
                 payload = json.loads(content)
@@ -124,13 +161,11 @@ def run_silver_job(spark: SparkSession | None = None, *, prefix: str = "pubmed")
         records_parsed = df.count()
 
         # Uniqueness: keep the most recently ingested row per (source, source_id)
-        deduped = (
-            df.orderBy(df.ingested_at.desc())
-            .dropDuplicates(["source", "source_id"])
-        )
+        deduped = df.orderBy(df.ingested_at.desc()).dropDuplicates(["source", "source_id"])
         records_out = deduped.count()
         duplicates_removed = records_parsed - records_out
 
+        ensure_minio_bucket("silver")
         deduped.write.mode("overwrite").parquet("s3a://silver/articles/")
 
         quality_summary = {
@@ -148,9 +183,13 @@ def run_silver_job(spark: SparkSession | None = None, *, prefix: str = "pubmed")
                 description="PubMed articles",
                 url="https://pubmed.ncbi.nlm.nih.gov",
             )
-            dataset = get_or_create_dataset(session, source=source, dataset_name="pubmed", layer="silver")
+            dataset = get_or_create_dataset(
+                session, source=source, dataset_name="pubmed", layer="silver"
+            )
             db_run = start_run(session, dataset=dataset)
-            db_run = finish_run(session, run=db_run, status="completed", records_processed=records_out)
+            db_run = finish_run(
+                session, run=db_run, status="completed", records_processed=records_out
+            )
             log_audit_event(
                 session,
                 event_type="data_quality",

@@ -98,8 +98,13 @@ services:
     restart: unless-stopped
     env_file:
       - ../../../.env
+    environment:
+      CLICKHOUSE_HTTP_URL: http://clickhouse:8123
+      CLICKHOUSE_DB: ${CLICKHOUSE_DB}
     ports:
       - "8200:8200"
+    depends_on:
+      - clickhouse
     networks:
       - cholangiohub
 

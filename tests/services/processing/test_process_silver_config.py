@@ -6,7 +6,17 @@ def test_build_spark_session_sets_hadoop_s3a_timeouts(monkeypatch):
 
     class DummySparkSession:
         class sparkContext:
-            _jsc = type("Jsc", (), {"hadoopConfiguration": lambda self: type("Conf", (), {"set": lambda self, key, value: captured.setdefault(key, value)})()})()
+            _jsc = type(
+                "Jsc",
+                (),
+                {
+                    "hadoopConfiguration": lambda self: type(
+                        "Conf",
+                        (),
+                        {"set": lambda self, key, value: captured.setdefault(key, value)},
+                    )()
+                },
+            )()
 
     class DummyBuilder:
         def appName(self, _):
@@ -33,9 +43,16 @@ def test_build_spark_session_sets_hadoop_s3a_timeouts(monkeypatch):
             def builder():
                 return DummyBuilder()
 
-    monkeypatch.setattr("services.processing.app.jobs.process_silver.SparkSession", DummySparkSessionModule)
+    monkeypatch.setattr(
+        "services.processing.app.jobs.process_silver.SparkSession",
+        DummySparkSessionModule,
+    )
 
     build_spark_session()
 
+    assert (
+        captured["spark.jars.packages"]
+        == "org.apache.hadoop:hadoop-aws:3.5.0,com.amazonaws:aws-java-sdk-bundle:1.12.720"
+    )
     assert captured["spark.hadoop.fs.s3a.connection.timeout"] == "60000"
     assert captured["spark.hadoop.fs.s3a.socket.timeout"] == "60000"

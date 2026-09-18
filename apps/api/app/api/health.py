@@ -1,20 +1,21 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.dependencies.database import database_session
-
+# Import ordering can vary across environments; silence ruff import-sorting
+# warning for this small router file.
+from app.dependencies.database import database_session  # noqa: I001
 
 router = APIRouter()
 
 
 @router.get("/health/db")
 def health_database(
-    session: Session = Depends(database_session),
-):
-    result = session.execute(
-        text("SELECT 1")
-    )
+    session: Session = Depends(database_session),  # noqa: B008
+) -> dict[str, Any]:
+    result = session.execute(text("SELECT 1"))
 
     return {
         "status": "healthy",

@@ -6,12 +6,12 @@ Usage: python scripts/validate_pipeline.py
 Requires the services to be reachable at the host/ports documented in the README.
 This script does not bring up Docker; run `make infra-up` beforehand.
 """
+
 from __future__ import annotations
 
-import time
-import sys
 import json
-from typing import Optional
+import sys
+import time
 
 import requests
 
@@ -19,7 +19,7 @@ INGEST_URL = "http://localhost:8100/ingest/pubmed"
 PROCESSING_URL = "http://localhost:8102"
 
 
-def post_ingest(term: str = "cholangiocarcinoma", limit: int = 5) -> Optional[dict]:
+def post_ingest(term: str = "cholangiocarcinoma", limit: int = 5) -> dict | None:
     payload = {"term": term, "limit": limit}
     try:
         r = requests.post(INGEST_URL, json=payload, timeout=30)
@@ -30,7 +30,7 @@ def post_ingest(term: str = "cholangiocarcinoma", limit: int = 5) -> Optional[di
         return None
 
 
-def post_processing(path: str) -> Optional[dict]:
+def post_processing(path: str) -> dict | None:
     try:
         r = requests.post(f"{PROCESSING_URL}/{path}", json={}, timeout=600)
         r.raise_for_status()
