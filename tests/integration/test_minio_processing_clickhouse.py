@@ -21,20 +21,13 @@ pytestmark = pytest.mark.integration
 def test_minio_processing_clickhouse_pipeline(tmp_path):
     # Start Postgres
     with PostgresContainer("postgres:15") as pg, \
-        DockerContainer("minio/minio:latest") as minio, \
-        DockerContainer("clickhouse/clickhouse-server:latest") as ch:
+        (DockerContainer("quay.io/minio/minio:latest")
+         .with_exposed_ports(9000, 9001)
+         .with_env("MINIO_ROOT_USER", "minioadmin")
+         .with_env("MINIO_ROOT_PASSWORD", "minioadmin")
+         .with_command("server /data --console-address :9001")) as minio, \
+        DockerContainer("clickhouse/clickhouse-server:latest").with_exposed_ports(8123) as ch:
         pg.start()
-
-        # Start MinIO with required env and command
-        minio.with_exposed_ports(9000, 9001)
-        minio.with_env("MINIO_ROOT_USER", "minioadmin")
-        minio.with_env("MINIO_ROOT_PASSWORD", "minioadmin")
-        minio.with_command("server /data --console-address :9001")
-        minio.start()
-
-        # Start ClickHouse
-        ch.with_exposed_ports(8123)
-        ch.start()
 
         # Compose endpoints/credentials
         minio_host = minio.get_container_host_ip()

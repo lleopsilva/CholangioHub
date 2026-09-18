@@ -55,6 +55,9 @@ select = [
 testpaths = [
     "tests"
 ]
+markers = [
+    "integration: tests that require containerized services"
+]
 pythonpath = [
     "."
 ]
