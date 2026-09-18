@@ -2,10 +2,10 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession
 
-from services.processing.app.jobs.process_gold import run_gold_job
+from services.processing.app.jobs import process_gold
 
 
-def test_run_gold_job_local(tmp_path):
+def test_run_gold_job_local(tmp_path, monkeypatch):
     spark = SparkSession.builder.master("local[1]").appName("test-gold").getOrCreate()
 
     # create a small silver DataFrame and write to local parquet
@@ -23,7 +23,43 @@ def test_run_gold_job_local(tmp_path):
 
     df.write.mode("overwrite").parquet(str(silver_dir))
 
-    result = run_gold_job(
+    # Monkeypatch DB interactions to avoid requiring a running Postgres instance
+    class FakeSource:
+        id = "source-1"
+
+    class FakeDataset:
+        id = "dataset-1"
+
+    class FakeRun:
+        id = "run-1"
+
+    class FakeSession:
+        def __init__(self):
+            self.committed = False
+
+        def add(self, obj):
+            pass
+
+        def flush(self):
+            pass
+
+        def commit(self):
+            self.committed = True
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(process_gold, "Session", lambda bind=None: FakeSession())
+    monkeypatch.setattr(process_gold, "get_or_create_source", lambda session, **kwargs: FakeSource())
+    monkeypatch.setattr(process_gold, "get_or_create_dataset", lambda session, **kwargs: FakeDataset())
+    monkeypatch.setattr(process_gold, "start_run", lambda session, **kwargs: FakeRun())
+    monkeypatch.setattr(process_gold, "finish_run", lambda session, **kwargs: FakeRun())
+    monkeypatch.setattr(process_gold, "log_audit_event", lambda session, **kwargs: None)
+
+    result = process_gold.run_gold_job(
         spark=spark, prefix="pubmed_test", input_path=str(silver_dir), output_path=str(gold_dir)
     )
 
