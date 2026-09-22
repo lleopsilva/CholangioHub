@@ -7,6 +7,7 @@ from pyspark.sql import DataFrame
 
 from .process_silver import build_spark_session
 
+
 def ingest_article_metrics_to_clickhouse(
     input_path: str = "s3a://gold/article_metrics/",
     clickhouse_url: str | None = None,
