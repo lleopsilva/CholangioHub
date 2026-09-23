@@ -56,7 +56,7 @@ def ingest_article_metrics_to_clickhouse(
         )
         insert_url = f"{clickhouse_url}/?query={insert_query}"
 
-        auth = (clickhouse_user, clickhouse_password) if clickhouse_user else None
+        auth = (clickhouse_user, clickhouse_password or "") if clickhouse_user else None
         resp = requests.post(insert_url, data=payload.encode("utf-8"), auth=auth, timeout=60)
         resp.raise_for_status()
 
