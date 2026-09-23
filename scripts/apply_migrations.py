@@ -4,8 +4,8 @@ Applies all .sql files in database/migrations in alphabetical order
 using the project's SQLAlchemy engine. Designed for local/dev usage
 until a full Alembic integration is added.
 """
+
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -15,8 +15,6 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
-
-from shared.database.engine import engine
 
 
 MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "database" / "migrations"
@@ -40,6 +38,10 @@ def main():
     if not sql_files:
         logging.info("No SQL migration files found in %s", MIGRATIONS_DIR)
         return 0
+
+    # Import engine after ensuring repo root is on sys.path to avoid
+    # module-level imports before path manipulation (ruff: E402).
+    from shared.database.engine import engine
 
     with engine.begin() as conn:
         for f in sql_files:

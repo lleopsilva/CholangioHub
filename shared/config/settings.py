@@ -1,11 +1,11 @@
-import os
+
+from typing import Any, cast
 
 from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-
     postgres_db: str = Field(default="postgres")
     postgres_user: str = Field(default="postgres")
     postgres_password: str = Field(default="postgres")
@@ -30,15 +30,24 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("postgres_port", "minio_port", "minio_console_port", "clickhouse_http_port", "clickhouse_native_port", mode="before")
+    @field_validator(
+        "postgres_port",
+        "minio_port",
+        "minio_console_port",
+        "clickhouse_http_port",
+        "clickhouse_native_port",
+        mode="before",
+    )
     @classmethod
-    def parse_optional_int(cls, value, info: ValidationInfo):
+    def parse_optional_int(cls, value: Any, info: ValidationInfo) -> int:
         if value is None:
-            return cls.model_fields[info.field_name].default
+            fname = cast(str, info.field_name)
+            return int(cls.model_fields[fname].default)
         if isinstance(value, str):
             value = value.strip()
             if not value:
-                return cls.model_fields[info.field_name].default
+                fname = cast(str, info.field_name)
+                return int(cls.model_fields[fname].default)
         return int(value)
 
     @field_validator(
@@ -55,14 +64,16 @@ class Settings(BaseSettings):
         mode="before",
     )
     @classmethod
-    def parse_optional_str(cls, value, info: ValidationInfo):
+    def parse_optional_str(cls, value: Any, info: ValidationInfo) -> str:
         if value is None:
-            return cls.model_fields[info.field_name].default
+            fname = cast(str, info.field_name)
+            return str(cls.model_fields[fname].default)
         if isinstance(value, str):
             value = value.strip()
             if not value:
-                return cls.model_fields[info.field_name].default
-        return value
+                fname = cast(str, info.field_name)
+                return str(cls.model_fields[fname].default)
+        return str(value)
 
 
 settings = Settings()

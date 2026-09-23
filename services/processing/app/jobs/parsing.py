@@ -15,11 +15,18 @@ def _parse_pub_year(pubdate: str | None) -> int | None:
 def _extract_authors(raw_authors: list[dict[str, Any]] | None) -> list[str]:
     if not raw_authors:
         return []
-    names = [a.get("name") for a in raw_authors if isinstance(a, dict) and a.get("name")]
+    names: list[str] = []
+    for a in raw_authors:
+        if isinstance(a, dict):
+            name = a.get("name")
+            if isinstance(name, str):
+                names.append(name)
     return names
 
 
-def parse_bronze_pubmed_payload(payload: dict[str, Any], *, ingested_at: str | None = None) -> list[dict[str, Any]]:
+def parse_bronze_pubmed_payload(
+    payload: dict[str, Any], *, ingested_at: str | None = None
+) -> list[dict[str, Any]]:
     """Turn one raw bronze PubMed JSON payload into a list of flat article dicts.
 
     `payload` is the object stored by services/ingestion (shape:

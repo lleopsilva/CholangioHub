@@ -19,7 +19,6 @@ with DAG(
     schedule_interval="@daily",
     catchup=False,
 ) as dag:
-
     wait_for_ingestion_service = HttpSensor(
         task_id="wait_for_ingestion_service",
         http_conn_id="ingestion_service",
@@ -65,4 +64,8 @@ with DAG(
         headers={"Content-Type": "application/json"},
     )
 
-    wait_for_ingestion_service >> trigger_ingest >> wait_for_processing_service >> process_silver >> process_gold
+    # Chain tasks explicitly on separate lines to respect line-length rules
+    wait_for_ingestion_service >> trigger_ingest
+    trigger_ingest >> wait_for_processing_service
+    wait_for_processing_service >> process_silver
+    process_silver >> process_gold

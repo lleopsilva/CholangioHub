@@ -1,0 +1,15 @@
+{
+  "title": "Gold Article Metrics",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Article Count by Journal",
+      "targets": [
+        {
+          "expr": "sum(article_count) by (journal)",
+          "format": "table"
+        }
+      ]
+    }
+  ]
+}

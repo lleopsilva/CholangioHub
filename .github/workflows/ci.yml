@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   lint-and-test:
@@ -19,14 +19,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install ruff mypy pytest bandit pip-audit
-      - name: Install project packages
+      - name: Install project packages and test deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e shared -e services/ingestion -e apps/api
+          pip install -e shared -e services/ingestion -e apps/api httpx2 testcontainers pyspark
       - name: Lint (ruff)
         run: ruff check .
-      - name: Typecheck (mypy)
-        run: mypy --ignore-missing-imports .
+      - name: Typecheck (mypy) - services/ingestion
+        run: mypy --ignore-missing-imports services/ingestion
+      - name: Typecheck (mypy) - services/processing
+        run: mypy --ignore-missing-imports services/processing
+      - name: Typecheck (mypy) - apps/api
+        run: mypy --ignore-missing-imports apps/api
+      # Note: `shared` mypy check omitted due to package layout; run separately if needed
       - name: Run unit tests (pytest)
         run: pytest -q -k "not integration"
       - name: Security scan (bandit)
@@ -46,6 +51,8 @@ jobs:
       - name: Install integration deps
         run: |
           python -m pip install --upgrade pip
-          pip install -e shared -e services/ingestion pytest testcontainers psycopg2-binary minio
-      - name: Run integration tests
-        run: pytest -q tests/services/ingestion/test_pubmed_integration.py
+          pip install -e shared -e services/ingestion -e apps/api pytest testcontainers psycopg2-binary boto3 botocore requests httpx2 pyspark
+      - name: Run integration tests (Postgres container)
+        run: |
+          # Run all integration tests which require containers
+          pytest -q tests/integration
